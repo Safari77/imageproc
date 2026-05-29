@@ -23,9 +23,9 @@ pub fn average_hash(img: &Image<Luma<f32>>) -> AverageHash {
     let num_pixels = (HASH_SIZE * HASH_SIZE) as usize;
     debug_assert_eq!(num_pixels, resized.len() as usize);
 
-    let sum: f32 = resized.pixels().map(|p| p[0]).sum();
+    let sum: f32 = resized.pixels().iter().map(|p| p[0]).sum();
     let mean = sum / num_pixels as f32;
-    let bits = resized.pixels().map(|p| p[0] > mean);
+    let bits = resized.pixels().iter().map(|p| p[0] > mean);
     AverageHash(Bits64::new(bits))
 }
 

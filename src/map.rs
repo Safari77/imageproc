@@ -167,6 +167,7 @@ where
         image.height(),
         image
             .pixels()
+            .iter()
             //optimisation: remove allocation if Pixel ever gets compile-time size information
             .flat_map(|pixel| f(*pixel).channels().to_vec())
             .collect(),
@@ -179,7 +180,7 @@ where
     P: Pixel,
     F: Fn(P) -> P,
 {
-    image.pixels_mut().for_each(|pixel| *pixel = f(*pixel))
+    image.pixels_mut().iter_mut().for_each(|pixel| *pixel = f(*pixel))
 }
 #[cfg(feature = "rayon")]
 #[doc = generate_parallel_doc_comment!("map_pixels")]
@@ -191,13 +192,15 @@ where
     Q::Subpixel: Send,
     F: Fn(P) -> Q + Sync,
 {
+    use rayon::iter::IntoParallelRefIterator;
     use rayon::iter::ParallelIterator;
 
     Image::from_vec(
         image.width(),
         image.height(),
         image
-            .par_pixels()
+            .pixels()
+            .par_iter()
             //optimisation: remove allocation if Pixel ever gets compile-time size information
             .flat_map(|pixel| f(*pixel).channels().to_vec())
             .collect(),
@@ -212,9 +215,10 @@ where
     P::Subpixel: Sync + Send,
     F: Fn(P) -> P + Sync,
 {
+    use rayon::iter::IntoParallelRefMutIterator;
     use rayon::iter::ParallelIterator;
 
-    image.par_pixels_mut().for_each(|pixel| *pixel = f(*pixel));
+    image.pixels_mut().par_iter_mut().for_each(|pixel| *pixel = f(*pixel));
 }
 
 /// Applies `f` to each enumerated pixel of the input image.
@@ -356,7 +360,8 @@ where
         image2.height(),
         image1
             .pixels()
-            .zip(image2.pixels())
+            .iter()
+            .zip(image2.pixels().iter())
             //optimisation: remove allocation if Pixel ever gets compile-time size information
             .flat_map(|(pixel1, pixel2)| f(*pixel1, *pixel2).channels().to_vec())
             .collect(),
