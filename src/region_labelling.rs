@@ -253,8 +253,8 @@ mod tests {
 
     use crate::definitions::{HasBlack, HasWhite};
 
-    use super::Connectivity::{Eight, Four};
     use super::connected_components;
+    use super::Connectivity::{Eight, Four};
 
     #[cfg_attr(not(target_arch = "wasm32"), test)]
     #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
@@ -292,7 +292,7 @@ mod tests {
     fn test_connected_components_eight_chessboard() {
         let image = chessboard(30, 30);
         let components = connected_components(&image, Eight, Luma::black());
-        let max_component = components.pixels().map(|p| p[0]).max();
+        let max_component = components.pixels().into_iter().map(|p| p[0]).max();
         assert_eq!(max_component, Some(1u32));
     }
 
@@ -301,7 +301,7 @@ mod tests {
     fn test_connected_components_four_chessboard() {
         let image = chessboard(30, 30);
         let components = connected_components(&image, Four, Luma::black());
-        let max_component = components.pixels().map(|p| p[0]).max();
+        let max_component = components.pixels().into_iter().map(|p| p[0]).max();
         assert_eq!(max_component, Some(450u32));
     }
 }
@@ -309,9 +309,9 @@ mod tests {
 #[cfg(not(miri))]
 #[cfg(test)]
 mod benches {
-    use super::Connectivity::{Eight, Four};
     use super::connected_components;
     use super::tests::chessboard;
+    use super::Connectivity::{Eight, Four};
     use crate::definitions::HasBlack;
     use ::test;
     use image::Luma;
