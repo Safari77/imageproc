@@ -207,6 +207,12 @@ impl Projection {
             })
     }
 
+    /// Returns the underlying row-major 3x3 matrix in homogeneous coordinates.
+    #[inline]
+    pub fn matrix(&self) -> [f32; 9] {
+        self.transform
+    }
+
     // Helper functions used as optimization in warp.
     #[inline(always)]
     fn map_projective(&self, x: f32, y: f32) -> (f32, f32) {
