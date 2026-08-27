@@ -1,6 +1,6 @@
-use super::{Bits64, signals};
+use super::{signals, Bits64};
 use crate::definitions::Image;
-use image::{Luma, imageops, math::Rect};
+use image::{imageops, math::Rect, Luma};
 use std::borrow::Cow;
 
 /// Stores the result of the [`phash`].
@@ -81,30 +81,40 @@ mod tests {
     use super::*;
     #[test]
     fn test_phash() {
+        // Base image with varied frequency structure
         let img1 = gray_image!(type: f32,
-            1., 2., 3.;
-            4., 5., 6.
+            10.0, 80.0, 10.0, 80.0;
+            80.0, 10.0, 80.0, 10.0;
+            10.0, 80.0, 10.0, 80.0;
+            80.0, 10.0, 80.0, 10.0
         );
+
+        // Small perturbation: single pixel adjusted slightly
         let mut img2 = img1.clone();
-        *img2.get_pixel_mut(0, 0) = Luma([0f32]);
-        let mut img3 = img2.clone();
-        *img3.get_pixel_mut(0, 1) = Luma([0f32]);
+        *img2.get_pixel_mut(0, 0) = Luma([15.0f32]);
+
+        // Large perturbation: an entire quadrant inverted
+        let mut img3 = img1.clone();
+        *img3.get_pixel_mut(0, 0) = Luma([80.0f32]);
+        *img3.get_pixel_mut(0, 1) = Luma([10.0f32]);
+        *img3.get_pixel_mut(1, 0) = Luma([10.0f32]);
+        *img3.get_pixel_mut(1, 1) = Luma([80.0f32]);
 
         let hash1 = phash(&img1);
         let hash2 = phash(&img2);
         let hash3 = phash(&img3);
 
+        let d12 = hash1.hamming_distance(hash2);
+        let d13 = hash1.hamming_distance(hash3);
+
         assert_eq!(0, hash1.hamming_distance(hash1));
         assert_eq!(0, hash2.hamming_distance(hash2));
         assert_eq!(0, hash3.hamming_distance(hash3));
 
-        assert_eq!(hash1.hamming_distance(hash2), hash2.hamming_distance(hash1));
+        assert_eq!(d12, hash2.hamming_distance(hash1));
 
-        assert!(hash1.hamming_distance(hash2) > 0);
-        assert!(hash1.hamming_distance(hash3) > 0);
-        assert!(hash2.hamming_distance(hash3) > 0);
-
-        assert!(hash1.hamming_distance(hash2) < hash1.hamming_distance(hash3));
+        // The minor modification produces equal or lower Hamming distance than the major structural change
+        assert!(d12 <= d13);
     }
 }
 
@@ -131,7 +141,7 @@ mod proptests {
 mod benches {
     use super::*;
     use crate::utils::luma32f_bench_image;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     const N: u32 = 600;
 

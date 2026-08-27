@@ -1,13 +1,13 @@
 //! An example of template matching in a greyscale image.
 
-use image::{GenericImage, GrayImage, Luma, Rgb, RgbImage, open};
+use image::{open, GenericImage, GrayImage, Luma, Rgb, RgbImage};
 use imageproc::definitions::Image;
 use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::map::map_pixels;
 use imageproc::rect::Rect;
 #[cfg(feature = "rayon")]
 use imageproc::template_matching::match_template_parallel;
-use imageproc::template_matching::{MatchTemplateMethod, match_template};
+use imageproc::template_matching::{match_template, MatchTemplateMethod};
 use std::env;
 use std::f32;
 use std::fs;
@@ -62,8 +62,8 @@ If the optional boolean argument parallel is given, match_template will be calle
 /// Convert an f32-valued image to a 8 bit depth, covering the whole
 /// available intensity range.
 fn convert_to_gray_image(image: &Image<Luma<f32>>) -> GrayImage {
-    let mut lo = f32::INFINITY;
-    let mut hi = f32::NEG_INFINITY;
+    let mut lo = <f32>::INFINITY;
+    let mut hi = <f32>::NEG_INFINITY;
 
     for p in image.iter() {
         lo = if *p < lo { *p } else { lo };

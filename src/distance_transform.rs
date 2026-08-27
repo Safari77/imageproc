@@ -343,7 +343,11 @@ struct Column<'a> {
 impl Source for Column<'_> {
     fn get(&self, idx: usize) -> f64 {
         let pixel = unsafe { self.image.unsafe_get_pixel(self.column, idx as u32)[0] as f64 };
-        if pixel > 0f64 { 0f64 } else { f64::INFINITY }
+        if pixel > 0f64 {
+            0f64
+        } else {
+            f64::INFINITY
+        }
     }
     fn len(&self) -> usize {
         self.image.height() as usize
@@ -513,7 +517,7 @@ mod tests {
                     let dist = p as f64 - q as f64;
                     dist * dist + f[p]
                 })
-                .fold(f64::NAN, f64::min);
+                .fold(<f64>::NAN, f64::min);
         }
         ret
     }
@@ -534,7 +538,7 @@ mod tests {
 
         for y in 0..height {
             for x in 0..width {
-                let mut min = f64::INFINITY;
+                let mut min = <f64>::INFINITY;
                 for yc in 0..height {
                     for xc in 0..width {
                         let pc = image.get_pixel(xc, yc)[0];
@@ -586,7 +590,7 @@ mod tests {
 
     #[test]
     fn test_distance_transform_1d_with_infinities() {
-        let f = vec![f64::INFINITY, f64::INFINITY, 5.0, f64::INFINITY];
+        let f = vec![<f64>::INFINITY, <f64>::INFINITY, 5.0, <f64>::INFINITY];
         let dists = distance_transform_1d(&f);
         assert_eq!(dists, &[9.0, 6.0, 5.0, 6.0]);
     }
@@ -647,7 +651,7 @@ mod proptests {
 mod benches {
     use super::*;
     use crate::utils::gray_bench_image;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     macro_rules! bench_euclidean_squared_distance_transform {
         ($name:ident, side: $s:expr) => {
