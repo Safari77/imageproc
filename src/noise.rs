@@ -2,7 +2,7 @@
 
 use crate::definitions::{Clamp, HasBlack, HasWhite, Image};
 use image::Pixel;
-use rand::{SeedableRng, rngs::StdRng};
+use rand::{rngs::StdRng, SeedableRng};
 use rand_distr::{Distribution, Normal, Uniform};
 
 /// Adds independent additive Gaussian noise to all channels
@@ -99,7 +99,7 @@ mod tests {
         let replaced = salt_and_pepper_noise(&image, replace_all_rate, seed);
 
         assert_eq!(unchanged, image);
-        assert!(replaced.pixels().all(|pixel| {
+        assert!(replaced.pixels().iter().all(|pixel| {
             let value = pixel[0];
             value == u8::MIN || value == u8::MAX
         }));
@@ -112,7 +112,7 @@ mod tests {
 mod benches {
     use super::*;
     use image::GrayImage;
-    use test::{Bencher, black_box};
+    use test::{black_box, Bencher};
 
     #[bench]
     fn bench_gaussian_noise_mut(b: &mut Bencher) {

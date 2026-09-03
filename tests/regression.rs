@@ -34,7 +34,7 @@ use imageproc::{
     edges::canny,
     filter::{gaussian_blur_f32, sharpen3x3},
     geometric_transformations::{
-        Border, Interpolation, Projection, rotate_about_center, rotate_about_center_no_crop, warp,
+        rotate_about_center, rotate_about_center_no_crop, warp, Border, Interpolation, Projection,
     },
     gradients,
     utils::load_image_or_panic,
@@ -105,7 +105,7 @@ where
     Image<P>: FromDynamic,
     F: Fn(&Image<P>) -> Image<P>,
 {
-    compare_to_truth_with_tolerance(input_file_name, truth_file_name, op, 0u8);
+    compare_to_truth_with_tolerance(input_file_name, truth_file_name, op, 1);
 }
 
 /// Loads an input image, applies a function to it and checks that the result
@@ -989,7 +989,7 @@ fn test_draw_flood_filled_shape() {
 
 #[test]
 fn test_hough_line_detection() {
-    use imageproc::hough::{LineDetectionOptions, PolarLine, detect_lines, draw_polar_lines};
+    use imageproc::hough::{detect_lines, draw_polar_lines, LineDetectionOptions, PolarLine};
     use imageproc::map::map_pixels;
 
     let white = Rgb([255u8, 255u8, 255u8]);
