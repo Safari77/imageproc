@@ -57,7 +57,7 @@ fn dct1d(
 
     let mut img_buf = Vec::with_capacity(width * height);
     for row in img.rows() {
-        let row = row.into_iter().map(|p| p.0[0]);
+        let row = row.iter().map(|p| p.0[0]);
         debug_assert_eq!(row.len(), dct_buf.len());
         for (dst, src) in dct_buf.iter_mut().zip(row) {
             *dst = src;

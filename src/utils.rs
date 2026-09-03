@@ -639,7 +639,7 @@ where
                 c = rendered_pixels[count],
                 w = pixel_column_width
             );
-            write!(rendered, "{} ", &colored(&padded, color(x, y))).unwrap();
+            write!(rendered, "{} ", colored(&padded, color(x, y))).unwrap();
             count += 1;
         }
         // Empty row, except for leading | separating row numbers from pixels
