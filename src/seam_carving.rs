@@ -382,7 +382,7 @@ where
 
     let mut output = ImageBuffer::<Luma<u8>, Vec<u8>>::new(width, height);
 
-    for (pixel, intensity) in img.pixels().into_iter().zip(output.iter_mut()) {
+    for (pixel, intensity) in img.pixels().iter().zip(output.iter_mut()) {
         *intensity = pixel.to_luma()[0];
     }
 
