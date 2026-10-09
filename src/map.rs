@@ -162,17 +162,15 @@ where
     Q: Pixel,
     F: Fn(P) -> Q,
 {
-    Image::from_vec(
-        image.width(),
-        image.height(),
-        image
-            .pixels()
-            .iter()
-            //optimisation: remove allocation if Pixel ever gets compile-time size information
-            .flat_map(|pixel| f(*pixel).channels().to_vec())
-            .collect(),
-    )
-    .expect("of course the length is good, it's just a map")
+    let (width, height) = image.dimensions();
+
+    let mut data = Vec::with_capacity(width as usize * height as usize * Q::CHANNEL_COUNT as usize);
+
+    for pixel in image.pixels() {
+        data.extend_from_slice(f(*pixel).channels());
+    }
+
+    Image::from_vec(width, height, data).expect("of course the length is good, it's just a map")
 }
 #[doc=generate_mut_doc_comment!("map_pixels")]
 pub fn map_pixels_mut<P, F>(image: &mut Image<P>, f: F)
@@ -180,7 +178,10 @@ where
     P: Pixel,
     F: Fn(P) -> P,
 {
-    image.pixels_mut().iter_mut().for_each(|pixel| *pixel = f(*pixel))
+    image
+        .pixels_mut()
+        .iter_mut()
+        .for_each(|pixel| *pixel = f(*pixel))
 }
 #[cfg(feature = "rayon")]
 #[doc = generate_parallel_doc_comment!("map_pixels")]
@@ -193,19 +194,23 @@ where
     F: Fn(P) -> Q + Sync,
 {
     use rayon::iter::IntoParallelRefIterator;
-    use rayon::iter::ParallelIterator;
+    use rayon::iter::{ParallelExtend, ParallelIterator};
 
-    Image::from_vec(
-        image.width(),
-        image.height(),
+    let (width, height) = image.dimensions();
+
+    let mut data = Vec::with_capacity(width as usize * height as usize * Q::CHANNEL_COUNT as usize);
+
+    // Sadly we cannot use `IndexedParallelIterator::collect_into_vec`, nor can we avoid
+    // allocating with the inner `to_vec`
+    data.par_extend(
         image
             .pixels()
             .par_iter()
             //optimisation: remove allocation if Pixel ever gets compile-time size information
-            .flat_map(|pixel| f(*pixel).channels().to_vec())
-            .collect(),
-    )
-    .expect("of course the length is good, it's just a map")
+            .flat_map_iter(|pixel| f(*pixel).channels().to_vec()),
+    );
+
+    Image::from_vec(width, height, data).expect("of course the length is good, it's just a map")
 }
 #[cfg(feature = "rayon")]
 #[doc = generate_parallel_doc_comment!("map_pixels_mut")]
@@ -218,7 +223,10 @@ where
     use rayon::iter::IntoParallelRefMutIterator;
     use rayon::iter::ParallelIterator;
 
-    image.pixels_mut().par_iter_mut().for_each(|pixel| *pixel = f(*pixel));
+    image
+        .pixels_mut()
+        .par_iter_mut()
+        .for_each(|pixel| *pixel = f(*pixel));
 }
 
 /// Applies `f` to each enumerated pixel of the input image.
@@ -253,16 +261,15 @@ where
     Q: Pixel,
     F: Fn(u32, u32, P) -> Q,
 {
-    Image::from_vec(
-        image.width(),
-        image.height(),
-        image
-            .enumerate_pixels()
-            //optimisation: remove allocation if Pixel ever gets compile-time size information
-            .flat_map(|(x, y, pixel)| f(x, y, *pixel).channels().to_vec())
-            .collect(),
-    )
-    .expect("of course the length is good, it's just a map")
+    let (width, height) = image.dimensions();
+
+    let mut data = Vec::with_capacity(width as usize * height as usize * Q::CHANNEL_COUNT as usize);
+
+    for (x, y, pixel) in image.enumerate_pixels() {
+        data.extend_from_slice(f(x, y, *pixel).channels());
+    }
+
+    Image::from_vec(width, height, data).expect("of course the length is good, it's just a map")
 }
 #[doc=generate_mut_doc_comment!("map_enumerated_pixels")]
 pub fn map_enumerated_pixels_mut<P, F>(image: &mut Image<P>, f: F)
@@ -284,18 +291,22 @@ where
     Q::Subpixel: Send,
     F: Fn(u32, u32, P) -> Q + Sync,
 {
-    use rayon::iter::ParallelIterator;
+    use rayon::iter::{ParallelExtend, ParallelIterator};
 
-    Image::from_vec(
-        image.width(),
-        image.height(),
+    let (width, height) = image.dimensions();
+
+    let mut data = Vec::with_capacity(width as usize * height as usize * Q::CHANNEL_COUNT as usize);
+
+    // Sadly we cannot use `IndexedParallelIterator::collect_into_vec`, nor can we avoid
+    // allocating with the inner `to_vec`
+    data.par_extend(
         image
             .par_enumerate_pixels()
             //optimisation: remove allocation if Pixel ever gets compile-time size information
-            .flat_map(|(x, y, pixel)| f(x, y, *pixel).channels().to_vec())
-            .collect(),
-    )
-    .expect("of course the length is good, it's just a map")
+            .flat_map_iter(|(x, y, pixel)| f(x, y, *pixel).channels().to_vec()),
+    );
+
+    Image::from_vec(width, height, data).expect("of course the length is good, it's just a map")
 }
 #[cfg(feature = "rayon")]
 #[doc = generate_parallel_doc_comment!("map_enumerated_pixels_mut")]
@@ -355,18 +366,17 @@ where
     R: Pixel,
     F: Fn(P, Q) -> R,
 {
-    Image::from_vec(
-        image1.width(),
-        image2.height(),
-        image1
-            .pixels()
-            .iter()
-            .zip(image2.pixels().iter())
-            //optimisation: remove allocation if Pixel ever gets compile-time size information
-            .flat_map(|(pixel1, pixel2)| f(*pixel1, *pixel2).channels().to_vec())
-            .collect(),
-    )
-    .expect("of course the length is good, it's just a map")
+    assert_eq!(image1.dimensions(), image2.dimensions());
+
+    let (width, height) = image1.dimensions();
+
+    let mut data = Vec::with_capacity(width as usize * height as usize * R::CHANNEL_COUNT as usize);
+
+    for (pixel1, pixel2) in image1.pixels().into_iter().zip(image2.pixels()) {
+        data.extend_from_slice(f(*pixel1, *pixel2).channels());
+    }
+
+    Image::from_vec(width, height, data).expect("of course the length is good, it's just a map")
 }
 
 /// Creates a grayscale image by extracting the red channel of an RGB image.
